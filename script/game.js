@@ -14,8 +14,8 @@ http://stackoverflow.com/questions/13916066/speed-up-the-drawing-of-many-points-
 
 var canvas;
 var context;
-var screenWidth = 800;
-var screenHeight = 800;
+var screenWidth = 400;
+var screenHeight = 400;
 var maxX = 4;
 var maxY = 4;
 var radius = 10;
@@ -24,7 +24,11 @@ var offset = 100;
 var padding= 20;
 var dots = [];
 var lines = [];
+var paths = [];
 var availableDots = [];
+
+
+
 var offsetX;
 var offsetY;
 
@@ -63,8 +67,7 @@ function init(){
     
     offsetX = ((screenWidth-(padding*2))/(maxX-1));
     offsetY = ((screenHeight-(padding*2))/(maxY-1));
-    //console.log("offset x :"+offsetX);
-    //console.log("offset y :"+offsetY);
+
    
     //DRAW GRID  
     renderGrid();
@@ -91,7 +94,12 @@ function createDots(){
             context.fillStyle = dotColor;
             context.fill();
             context.closePath();
-              
+            
+            //CREATE NUMBERS
+            context.font = '10pt Arial';
+            context.textAlign = 'center';
+            context.fillStyle = 'black';
+            context.fillText(cur, xpos, ypos+5);
  
             var dot = {};
             dot.x = xpos;
@@ -145,16 +153,11 @@ function createDots(){
             }else{
                 dot.bottomSibling = -1;
             }
-           
-            
+ 
             dot.selected = false;
-            dot.connections = [];
-            /*console.log("#######################");
-            console.log("Dot self : "+dot.x+"x"+dot.y);
-            console.log("Dot left : "+dot.leftSibling);
-            console.log("Dot right : "+dot.rightSibling);
-            console.log("Dot top : "+dot.topSibling);
-            console.log("Dot bottom : "+dot.bottomSibling);*/
+           // dot.paths = [];
+           dot.chain= [];
+
             dots.push(dot);
               
               
@@ -219,8 +222,16 @@ function draw(){
         //FILL
         context.fillStyle = dotColor;
         context.fill();
-        context.closePath();  
+        context.closePath();
+        
+         context.font = '10pt Arial';
+        context.textAlign = 'center';
+        context.fillStyle = 'black';
+        context.fillText(dot.id, dot.x, dot.y+5);
     }
+    
+    //DRAW TEXT
+   
 
 }
 
@@ -294,8 +305,7 @@ function onGridDown(event) {
                             available = true;
                         }
                     }
-                    
-                    console.log("available : "+available);
+
                     if (available) {
                         
                         //console.log(dotOne.x+"X"+dotOne.y)
@@ -333,55 +343,16 @@ function nextPlayer() {
     if (player>=players.length) {
        player = 0;
     }
-    console.log(player);
-    //code
 }
 
 
-function completePath(dotOne,dotTwo) {
-   console.log(dotOne.connections.length,dotTwo.connections.length)
-    
-    
-     //ADD ALL DOT ONE CONNECTIONS TO DOT TWO
-   if (dotTwo.connections.length>0) {
-        for(var o = 0;o<dotTwo.connections.length;o++){
-            dotOne.connections.push(dotTwo.connections[o]);
-           
-        }
-        
-        
-         dotOne.connections.sort(function(a, b){return a-b});
-   }
-  
-   if (dotOne.connections.length>0) {
-        for(var t = 0;t<dotOne.connections.length;t++){
-            dotTwo.connections.push(dotOne.connections[t]);
-            
-        }
-        
-        
-        dotTwo.connections.sort(function(a, b){return a-b});
-   }
-   
 
-    console.log("dot one : "+uniq_fast(dotOne.connections));
-    console.log("dot two : "+uniq_fast(dotTwo.connections));
-   
-   
-    var arrOne = uniq_fast(dotOne.connections);
-    var arrTwo = uniq_fast(dotTwo.connections);
-    if (arrOne.indexOf(dotTwo.id) && arrTwo.indexOf(dotOne.id) ) {
-        //code
-        console.log("combine!")
-    }
-    
-    //COMBINE
-    /*var combine = dotOne.connections.concat(dotTwo.connections);
-   
-    combine.sort(function(a, b){return a-b});
-    combine = uniq_fast(combine);
-     console.log("combine : "+combine);*/
+
+
+function sortNumber(a,b) {
+    return a - b;
 }
+
 
 function uniq_fast(a) {
     var seen = {};
@@ -425,35 +396,27 @@ function showSelectable(currentDot){
     var rightDot = currentDot.rightSibling;
     var topDot = currentDot.topSibling;
     var bottomDot = currentDot.bottomSibling;
-    //console.log("current dot :"+currentDot.x+"x"+currentDot.y)
-    /*console.log("XXXXXXXXXXXXXXXXXXXXXXXXXX");
-    console.log("current dot : "+currentDot.id)
-    console.log("left dot : "+leftDot)
-    console.log("right dot : "+rightDot)
-    console.log("top dot : "+topDot)
-    console.log("bottom dot : "+bottomDot)*/
-    
-    
+
     if (leftDot!=-1) {
-        //console.log("left dot : "+hasLine(currentDot.id,leftDot));
+      
         if (!hasLine(id,leftDot)) {
             availableDots.push(leftDot);
         }
     }
     if (rightDot!=-1) {
-        //console.log("right dot : "+hasLine(currentDot.id,rightDot));
+       
         if (!hasLine(id,rightDot)) {
             availableDots.push(rightDot);
         }
     }
     if (topDot!=-1) {
-       // console.log("top dot : "+hasLine(currentDot.id,topDot));
+       
         if (!hasLine(id,topDot)) {
             availableDots.push(topDot);
         }
     }
     if (bottomDot!=-1) {
-        //console.log("bottom dot : "+hasLine(currentDot.id,bottomDot));
+
         if (!hasLine(id,bottomDot)) {
             availableDots.push(bottomDot);
         }
@@ -464,31 +427,7 @@ function showSelectable(currentDot){
 
 function drawLine(dotOne,dotTwo,player) {
    var line = {};
-   
-   //FROM LOW TO HIGH
-   if (dotOne.id > dotTwo.id) {
-        line.fromId = dotTwo.id;
-        line.toId = dotOne.id;
-   }else{
-        line.fromId = dotOne.id;
-        line.toId = dotTwo.id;
-   }
-   
-   // toArray.push(line.toId);
-    //fromArray.push(line.fromId);
-  
-   //chainArray.push(line.fromId,line.toId)
-   
-  
-   
-   //ADD EACHOTHERS ID
-   dotOne.connections.push(dotTwo.id);
-   dotTwo.connections.push(dotOne.id);
-   
-   
-   
-   
-   
+
    line.fromId = dotOne.id;
    line.toId = dotTwo.id;
    
@@ -498,22 +437,78 @@ function drawLine(dotOne,dotTwo,player) {
    line.endY = dotTwo.y;
    line.player = player;
    lines.push(line);
-   
-   
-    //console.log("one : " +dotOne.connections.sort(function(a, b){return a-b}))
-    //console.log("two : " +dotTwo.connections.sort(function(a, b){return a-b}))
-   
-    completePath(dotOne,dotTwo);
+  
+   checkPath(dotOne,dotTwo);
     
+
+
+}
+/*var current = null;
+var cnt = 0;
+for (var i = 0; i < array_elements.length; i++) {
+    if (array_elements[i] != current) {
+        if (cnt > 0) {
+            document.write(current + ' comes --> ' + cnt + ' times<br>');
+        }
+        current = array_elements[i];
+        cnt = 1;
+    } else {
+        cnt++;
+    }
+}
+if (cnt > 0) {
+    document.write(current + ' comes --> ' + cnt + ' times');
+}*/
+
+function cleanArray(arr){
     
-   /*
-   if (dotOne.connections.indexOf(dotTwo.id) && (dotTwo.connections.indexOf(dotOne.id))) {
-     console.log("completed path!");
-     completePath(dotOne,dotTwo);
-   }*/
-   
+    var k = {};
+
+    //push into hashtable
+    for(i in arr){
+     k[arr[i]]=(k[arr[i]]||0)+1; //increments count if element already exists
+    }
+    
+    //result
+    for(var j in k) {
+     console.log(j+" comes -> "+k[j]+" times");
+    }
 }
 
+function checkPath(dotOne,dotTwo){
+    
+    console.log("add "+dotOne.id+"/"+dotTwo.id);
+    paths.push(dotOne.id,dotTwo.id);
+    
+    
+    //REMOVE DOUBLES
+    var sorted = paths.sort(sortNumber);
+   
+    console.log(sorted)
+    cleanArray(sorted);
+    
+   /* var foundOne = 0;
+    var foundTwo = 0;
+    for (var i = 0;i<paths.length;i++) {
+        if (paths[i] == dotOne.id) {
+            foundOne++;
+        }else if (paths[i]== dotTwo.id) {
+            foundTwo++;
+        }
+    }
+    
+    console.log("found "+dotOne.id+" : "+foundOne+"x / found "+dotTwo.id+" : "+foundTwo+"x")
+    
+    console.log(paths.sort(sortNumber))
+    
+    
+    if (foundOne>=2 && foundTwo>=2 ) {
+        console.log("combine")
+    }
+   */
+   
+   
+    //console.log(uniq_fast(paths.sort(sortNumber)));
+    
+}
 
- // adds the canvas to the body element
-//document.getElementById('someBox').appendChild(canv); // adds the canvas to #someBox
